@@ -1,0 +1,105 @@
+{% extends 'app/base.html' %}
+
+{% block title %}MyGovernence - Request Management{% endblock %}
+
+{% block content %}
+<div class="page-content">
+    <h1>MyGovernence</h1>
+    
+    <div class="governance-sections">
+        <section class="governance-section">
+            <h2 class="section-title">Notifications</h2>
+            <div class="section-content">
+                <!-- Content will be added here -->
+            </div>
+        </section>
+        
+        {% if can_view_triage %}
+        <section class="governance-section">
+            <h2 class="section-title">Triage Requests</h2>
+            <div class="section-content">
+                {% if triage_requests %}
+                    <div class="requests-list">
+                        {% for request in triage_requests %}
+                            <div class="request-item">
+                                <div class="request-header">
+                                    <h3 class="request-title">{{ request.title }}</h3>
+                                    <span class="request-stage">{{ request.stage }}</span>
+                                </div>
+                                {% if request.description %}
+                                    <p class="request-description">{{ request.description|truncatewords:30 }}</p>
+                                {% endif %}
+                                <div class="request-meta">
+                                    <span class="request-author">Created by: {{ request.created_by.get_full_name|default:request.created_by.username }}</span>
+                                    <span class="request-date">{{ request.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-message">No triage requests at this time.</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+        
+        <section class="governance-section">
+            <h2 class="section-title">Under Review - Governance</h2>
+            <div class="section-content">
+                {% if governance_requests %}
+                    <div class="requests-list">
+                        {% for request in governance_requests %}
+                            <div class="request-item">
+                                <div class="request-header">
+                                    <h3 class="request-title">{{ request.title }}</h3>
+                                    <span class="request-stage">{{ request.stage }}</span>
+                                </div>
+                                {% if request.description %}
+                                    <p class="request-description">{{ request.description|truncatewords:30 }}</p>
+                                {% endif %}
+                                <div class="request-meta">
+                                    <span class="request-author">Created by: {{ request.created_by.get_full_name|default:request.created_by.username }}</span>
+                                    <span class="request-date">{{ request.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-message">No requests under governance review at this time.</p>
+                {% endif %}
+            </div>
+        </section>
+        
+        <section class="governance-section">
+            <h2 class="section-title">Under Review - Final Governance</h2>
+            <div class="section-content">
+                {% if final_governance_requests %}
+                    <ul class="requests-list-format">
+                        {% for request in final_governance_requests %}
+                            <li class="request-list-item">
+                                <div class="list-item-content">
+                                    <span class="list-item-title">{{ request.title }}</span>
+                                    <span class="list-item-meta">
+                                        <span class="list-item-author">{{ request.created_by.get_full_name|default:request.created_by.username }}</span>
+                                        <span class="list-item-date">{{ request.created_at|date:"M d, Y" }}</span>
+                                    </span>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="empty-message">No requests under final governance review at this time.</p>
+                {% endif %}
+            </div>
+        </section>
+        
+        <section class="governance-section">
+            <h2 class="section-title">MyRequests</h2>
+            <div class="section-content">
+                <!-- Content will be added here -->
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+

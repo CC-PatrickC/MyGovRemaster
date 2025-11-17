@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Request Management{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'app/css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-content">
+            {% block top_bar_content %}
+            <div class="logo-section">
+                {% block logo %}
+                <img src="{% static 'app/images/cc-its-logo-sm.png' %}" alt="Logo" class="logo-image" onerror="this.style.display='none'">
+                {% endblock %}
+                <div class="title-section">
+                    <div class="logo">Request Management</div>
+                    <div class="subtitle">ITS Strategic Planning</div>
+                </div>
+            </div>
+            <div class="user-section">
+                {% block user_info %}
+                <span class="user-name-group"><strong class="user-name">Patrick Condon</strong> | SuperUser</span>
+                <div class="user-dropdown">
+                    <button class="user-icon-button" type="button" onclick="toggleUserDropdown()">
+                        <svg class="user-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </button>
+                    <div class="user-dropdown-menu" id="userDropdown">
+                        <a href="{% url 'logout' %}" class="dropdown-item">Log out</a>
+                    </div>
+                </div>
+                {% endblock %}
+            </div>
+            {% endblock %}
+        </div>
+    </div>
+    
+    <div class="page-container">
+        <nav class="sidebar-nav">
+            {% block sidebar_nav %}
+            <ul class="nav-menu">
+                <li><a href="{% url 'index' %}" class="nav-link">MyGovernence</a></li>
+                <li><a href="{% url 'submit_request' %}" class="nav-link">Submit Request</a></li>
+                <li><a href="{% url 'requests' %}" class="nav-link">Requests</a></li>
+            </ul>
+            {% endblock %}
+        </nav>
+        
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    
+    {% block extra_js %}{% endblock %}
+    <script>
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        // Close dropdown when clicking outside
+        window.onclick = function(event) {
+            if (!event.target.matches('.user-icon-button') && !event.target.closest('.user-dropdown')) {
+                const dropdown = document.getElementById('userDropdown');
+                if (dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
