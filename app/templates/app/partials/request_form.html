@@ -1,0 +1,157 @@
+<form id="requestEditForm" method="post" action="{% url 'edit_request' request_obj.id %}">
+    {% csrf_token %}
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="{{ form.title.id_for_label }}">Title</label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="error-message">{{ form.title.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <div class="error-message">{{ form.description.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="{{ form.department.id_for_label }}">Department</label>
+            {{ form.department }}
+            {% if form.department.errors %}
+                <div class="error-message">{{ form.department.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="{{ form.stage.id_for_label }}">Stage</label>
+            {{ form.stage }}
+            {% if form.stage.errors %}
+                <div class="error-message">{{ form.stage.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.request_type.id_for_label }}">Request Type</label>
+            {{ form.request_type }}
+            {% if form.request_type.errors %}
+                <div class="error-message">{{ form.request_type.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.priority.id_for_label }}">Priority</label>
+            {{ form.priority }}
+            {% if form.priority.errors %}
+                <div class="error-message">{{ form.priority.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="{{ form.scoring_notes.id_for_label }}">Scoring Notes</label>
+            {{ form.scoring_notes }}
+            {% if form.scoring_notes.errors %}
+                <div class="error-message">{{ form.scoring_notes.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="{{ form.final_priority.id_for_label }}">Final Priority</label>
+            {{ form.final_priority }}
+            {% if form.final_priority.errors %}
+                <div class="error-message">{{ form.final_priority.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.final_score.id_for_label }}">Final Score</label>
+            {{ form.final_score }}
+            {% if form.final_score.errors %}
+                <div class="error-message">{{ form.final_score.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="form-section-title">Scoring (1-5)</div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="{{ form.strategic_alignment.id_for_label }}">Strategic Alignment</label>
+            {{ form.strategic_alignment }}
+            {% if form.strategic_alignment.errors %}
+                <div class="error-message">{{ form.strategic_alignment.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.cost_benefit.id_for_label }}">Cost Benefit</label>
+            {{ form.cost_benefit }}
+            {% if form.cost_benefit.errors %}
+                <div class="error-message">{{ form.cost_benefit.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.user_impact.id_for_label }}">User Impact</label>
+            {{ form.user_impact }}
+            {% if form.user_impact.errors %}
+                <div class="error-message">{{ form.user_impact.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="{{ form.ease_of_implementation.id_for_label }}">Ease of Implementation</label>
+            {{ form.ease_of_implementation }}
+            {% if form.ease_of_implementation.errors %}
+                <div class="error-message">{{ form.ease_of_implementation.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.vendor_reputation_support.id_for_label }}">Vendor Reputation & Support</label>
+            {{ form.vendor_reputation_support }}
+            {% if form.vendor_reputation_support.errors %}
+                <div class="error-message">{{ form.vendor_reputation_support.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label for="{{ form.security_compliance.id_for_label }}">Security & Compliance</label>
+            {{ form.security_compliance }}
+            {% if form.security_compliance.errors %}
+                <div class="error-message">{{ form.security_compliance.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="{{ form.student_centered.id_for_label }}">Student-Centered</label>
+            {{ form.student_centered }}
+            {% if form.student_centered.errors %}
+                <div class="error-message">{{ form.student_centered.errors }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="form-actions">
+        <button type="submit" class="btn-primary">Save Changes</button>
+        <button type="button" class="btn-secondary" onclick="closeRequestModal()">Cancel</button>
+    </div>
+</form>
+

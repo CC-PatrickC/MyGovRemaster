@@ -21,10 +21,13 @@
                 {% if triage_requests %}
                     <div class="requests-list">
                         {% for request in triage_requests %}
-                            <div class="request-item">
+                            <div class="request-item" onclick="openRequestModal('{{ request.id }}', true)" data-request-id="{{ request.id }}" data-is-triage="true">
                                 <div class="request-header">
                                     <h3 class="request-title">{{ request.title }}</h3>
-                                    <span class="request-stage">{{ request.stage }}</span>
+                                    <div class="request-right-info">
+                                        <span class="request-id">#{{ request.request_id }}</span>
+                                        <span class="request-stage">{{ request.stage }}</span>
+                                    </div>
                                 </div>
                                 {% if request.description %}
                                     <p class="request-description">{{ request.description|truncatewords:30 }}</p>
@@ -49,10 +52,13 @@
                 {% if governance_requests %}
                     <div class="requests-list">
                         {% for request in governance_requests %}
-                            <div class="request-item">
+                            <div class="request-item" onclick="openRequestModal('{{ request.id }}', false)" data-request-id="{{ request.id }}">
                                 <div class="request-header">
                                     <h3 class="request-title">{{ request.title }}</h3>
-                                    <span class="request-stage">{{ request.stage }}</span>
+                                    <div class="request-right-info">
+                                        <span class="request-id">#{{ request.request_id }}</span>
+                                        <span class="request-stage">{{ request.stage }}</span>
+                                    </div>
                                 </div>
                                 {% if request.description %}
                                     <p class="request-description">{{ request.description|truncatewords:30 }}</p>
@@ -101,5 +107,310 @@
         </section>
     </div>
 </div>
+
+<!-- Request Modal -->
+<div id="requestModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Request Details</h2>
+            <span class="modal-close" onclick="closeRequestModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <!-- Modal content will be added here -->
+        </div>
+    </div>
+</div>
+
+<script>
+    function openRequestModal(requestId, isTriageRequest = false) {
+        const modal = document.getElementById('requestModal');
+        const modalBody = modal.querySelector('.modal-body');
+        
+        if (isTriageRequest) {
+            // Load form for triage requests
+            modalBody.innerHTML = '<div class="loading">Loading...</div>';
+            const modalTitle = modal.querySelector('.modal-title');
+            modal.style.display = 'block';
+            
+            fetch(`/edit-request/${requestId}/`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                    if (data.form_html) {
+                        modalBody.innerHTML = data.form_html;
+                        if (modalTitle) {
+                            modalTitle.textContent = 'Edit Request';
+                        }
+                        // Attach form submit handler
+                        attachFormHandler();
+                        // Attach file upload handler
+                        attachFileUploadHandler();
+                        // Update timestamps to local time
+                        updateTimestampsToLocal();
+                    }
+            })
+            .catch(error => {
+                console.error('Error loading form:', error);
+                modalBody.innerHTML = '<p class="error-message">Error loading form. Please try again.</p>';
+            });
+        } else {
+            // For other requests, just show empty modal
+            modalBody.innerHTML = '<!-- Modal content will be added here -->';
+            modal.style.display = 'block';
+        }
+    }
+    
+    function attachFormHandler() {
+        const form = document.getElementById('requestEditForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // If form_html is provided, update the modal content instead of reloading
+                        if (data.form_html) {
+                            const modalBody = document.querySelector('.modal-body');
+                            modalBody.innerHTML = data.form_html;
+                            // Re-attach handlers
+                            attachFormHandler();
+                            attachFileUploadHandler();
+                            updateTimestampsToLocal();
+                        } else {
+                            // Reload page to show updated data
+                            window.location.reload();
+                        }
+                    } else {
+                        // Show errors
+                        const modalBody = document.querySelector('.modal-body');
+                        if (data.errors) {
+                            // Display form errors
+                            alert('Please correct the errors in the form.');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error submitting form:', error);
+                    alert('Error saving changes. Please try again.');
+                });
+            });
+        }
+    }
+    
+    function attachFileUploadHandler() {
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const attachmentsList = document.getElementById('attachmentsList');
+        
+        if (!fileUploadArea || !fileInput) return;
+        
+        const requestId = fileUploadArea.getAttribute('data-request-id');
+        
+        // Click to browse
+        fileUploadArea.addEventListener('click', function(e) {
+            // Don't trigger if clicking on attachment items or links
+            if (!e.target.closest('.attachment-item') && !e.target.closest('.attachment-link')) {
+                fileInput.click();
+            }
+        });
+        
+        // File input change
+        fileInput.addEventListener('change', function(e) {
+            handleFiles(e.target.files, requestId, attachmentsList);
+            // Clear the input so the same file can be uploaded again if needed
+            fileInput.value = '';
+        });
+        
+        // Drag and drop
+        fileUploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            fileUploadArea.classList.add('drag-over');
+        });
+        
+        fileUploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            fileUploadArea.classList.remove('drag-over');
+        });
+        
+        fileUploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            fileUploadArea.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFiles(files, requestId, attachmentsList);
+            }
+        });
+    }
+    
+    function handleFiles(files, requestId, attachmentsList) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const MAX_FILES = 5;
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+        
+        // Check current attachment count
+        const currentAttachments = attachmentsList.querySelectorAll('.attachment-item').length;
+        const filesArray = Array.from(files);
+        
+        // Check total file count
+        if (currentAttachments + filesArray.length > MAX_FILES) {
+            alert(`You can only upload up to ${MAX_FILES} files total. You currently have ${currentAttachments} file(s).`);
+            return;
+        }
+        
+        // Check file sizes
+        const oversizedFiles = filesArray.filter(file => file.size > MAX_FILE_SIZE);
+        if (oversizedFiles.length > 0) {
+            const fileNames = oversizedFiles.map(f => f.name).join(', ');
+            alert(`The following file(s) exceed the 10MB limit: ${fileNames}`);
+            return;
+        }
+        
+        filesArray.forEach(file => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('csrfmiddlewaretoken', csrfToken);
+            
+            fetch(`/upload-attachment/${requestId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addAttachmentToList(data.attachment, attachmentsList);
+                } else {
+                    alert('Error uploading file: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading file:', error);
+                alert('Error uploading file. Please try again.');
+            });
+        });
+    }
+    
+    function addAttachmentToList(attachment, attachmentsList) {
+        // Remove "no attachments" message if it exists
+        const noAttachmentsMsg = attachmentsList.querySelector('.no-attachments-message');
+        if (noAttachmentsMsg) {
+            noAttachmentsMsg.remove();
+        }
+        
+        const attachmentItem = document.createElement('div');
+        attachmentItem.className = 'attachment-item';
+        attachmentItem.setAttribute('data-attachment-id', attachment.id);
+        attachmentItem.innerHTML = `
+            <span class="attachment-name">${escapeHtml(attachment.filename)}</span>
+            <div class="attachment-actions">
+                <a href="${attachment.url}" target="_blank" class="attachment-link">View</a>
+                <button type="button" class="attachment-delete" onclick="deleteAttachment(${attachment.id})">Delete</button>
+            </div>
+        `;
+        attachmentsList.appendChild(attachmentItem);
+    }
+    
+    function deleteAttachment(attachmentId) {
+        if (!confirm('Are you sure you want to delete this attachment?')) {
+            return;
+        }
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        
+        fetch(`/delete-attachment/${attachmentId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const attachmentsList = document.getElementById('attachmentsList');
+                const attachmentItem = attachmentsList.querySelector(`[data-attachment-id="${attachmentId}"]`);
+                if (attachmentItem) {
+                    attachmentItem.remove();
+                    
+                    // Show "no attachments" message if list is empty
+                    if (attachmentsList.querySelectorAll('.attachment-item').length === 0) {
+                        const noAttachmentsMsg = document.createElement('p');
+                        noAttachmentsMsg.className = 'no-attachments-message';
+                        noAttachmentsMsg.textContent = 'No attachments uploaded yet.';
+                        attachmentsList.appendChild(noAttachmentsMsg);
+                    }
+                }
+            } else {
+                alert('Error deleting attachment: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting attachment:', error);
+            alert('Error deleting attachment. Please try again.');
+        });
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function updateTimestampsToLocal() {
+        // Update all history timestamps to local time
+        const timestamps = document.querySelectorAll('.history-timestamp[data-utc]');
+        timestamps.forEach(timestamp => {
+            const utcString = timestamp.getAttribute('data-utc');
+            if (utcString) {
+                const date = new Date(utcString);
+                const localString = date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                timestamp.textContent = localString;
+            }
+        });
+    }
+    
+    function closeRequestModal() {
+        const modal = document.getElementById('requestModal');
+        modal.style.display = 'none';
+    }
+    
+    // Close modal when clicking outside of it
+    document.addEventListener('click', function(event) {
+        const modal = document.getElementById('requestModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    });
+</script>
 {% endblock %}
 
