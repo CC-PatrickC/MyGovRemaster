@@ -101,3 +101,20 @@ class TriageNotesHistory(models.Model):
     
     def __str__(self):
         return f"{self.request.request_id} - {self.submitted_by.username} - {self.submitted_at}"
+
+
+class RequestChangeHistory(models.Model):
+    """Model for tracking all changes made to requests."""
+    request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name='change_history')
+    field_name = models.CharField(max_length=100, help_text="Name of the field that was changed")
+    old_value = models.TextField(blank=True, null=True, help_text="Previous value")
+    new_value = models.TextField(blank=True, null=True, help_text="New value")
+    changed_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-changed_at']
+        verbose_name_plural = 'Request Change History'
+    
+    def __str__(self):
+        return f"{self.request.request_id} - {self.field_name} - {self.changed_by.username} - {self.changed_at}"

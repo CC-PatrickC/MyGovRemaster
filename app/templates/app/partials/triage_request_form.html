@@ -3,7 +3,7 @@
     
     <div class="form-row">
         <div class="form-group">
-            <label for="{{ form.title.id_for_label }}">Title</label>
+            <h4 class="attachments-section-title">Title</h4>
             {{ form.title }}
             {% if form.title.errors %}
                 <div class="error-message">{{ form.title.errors }}</div>
@@ -13,7 +13,7 @@
     
     <div class="form-row">
         <div class="form-group">
-            <label for="{{ form.description.id_for_label }}">Description</label>
+            <h4 class="attachments-section-title">Description</h4>
             {{ form.description }}
             {% if form.description.errors %}
                 <div class="error-message">{{ form.description.errors }}</div>
@@ -23,7 +23,7 @@
     
     <div class="form-row">
         <div class="form-group">
-            <label for="{{ form.department.id_for_label }}">Department</label>
+            <h4 class="attachments-section-title">Department</h4>
             {{ form.department }}
             {% if form.department.errors %}
                 <div class="error-message">{{ form.department.errors }}</div>
@@ -33,7 +33,7 @@
     
     <div class="form-row">
         <div class="form-group">
-            <label for="{{ form.stage.id_for_label }}">Stage</label>
+            <h4 class="attachments-section-title">Stage</h4>
             {{ form.stage }}
             {% if form.stage.errors %}
                 <div class="error-message">{{ form.stage.errors }}</div>
@@ -59,7 +59,7 @@
     
     <div class="form-row">
         <div class="form-group full-width">
-            <label>Attachments</label>
+            <h4 class="attachments-section-title">Attachments</h4>
             <div class="file-upload-area" id="fileUploadArea" data-request-id="{{ request_obj.id }}">
                 <input type="file" id="fileInput" multiple style="display: none;" />
                 <div class="file-upload-content">
@@ -95,7 +95,7 @@
     
     <div class="form-row">
         <div class="form-group full-width">
-            <label for="{{ form.triage_notes.id_for_label }}">Triage Notes</label>
+            <h4 class="attachments-section-title">Triage Notes</h4>
             {{ form.triage_notes }}
             {% if form.triage_notes.errors %}
                 <div class="error-message">{{ form.triage_notes.errors }}</div>
@@ -105,7 +105,7 @@
     
     <div class="form-row">
         <div class="form-group full-width">
-            <label class="history-section-title">Triage Notes History</label>
+            <h4 class="attachments-section-title">Triage Notes History</h4>
             <div class="triage-notes-history" id="triageNotesHistory">
                 {% if triage_notes_history %}
                     {% for history_item in triage_notes_history %}
@@ -119,6 +119,40 @@
                     {% endfor %}
                 {% else %}
                     <p class="no-history-message">No triage notes history available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group full-width">
+            <h4 class="attachments-section-title">Triage Change History</h4>
+            <div class="change-history" id="changeHistory">
+                {% if change_history %}
+                    {% for change in change_history %}
+                        <div class="change-item" data-timestamp="{{ change.changed_at|date:'c' }}">
+                            <div class="change-header">
+                                <span class="change-author">{{ change.changed_by.get_full_name|default:change.changed_by.username }}</span>
+                                <span class="change-timestamp" data-utc="{{ change.changed_at|date:'c' }}">{{ change.changed_at|date:"M d, Y H:i:s" }}</span>
+                            </div>
+                            <div class="change-details">
+                                <div class="change-field-name">{{ change.field_name }}</div>
+                                <div class="change-values">
+                                    <div class="change-old">
+                                        <span class="change-label">From:</span>
+                                        <span class="change-value">{{ change.old_value|default:"(empty)" }}</span>
+                                    </div>
+                                    <div class="change-arrow">→</div>
+                                    <div class="change-new">
+                                        <span class="change-label">To:</span>
+                                        <span class="change-value">{{ change.new_value|default:"(empty)" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-history-message">No change history available.</p>
                 {% endif %}
             </div>
         </div>

@@ -150,6 +150,8 @@
                         attachFileUploadHandler();
                         // Update timestamps to local time
                         updateTimestampsToLocal();
+                        // Update change history timestamps
+                        updateChangeHistoryTimestamps();
                     }
             })
             .catch(error => {
@@ -381,6 +383,27 @@
     function updateTimestampsToLocal() {
         // Update all history timestamps to local time
         const timestamps = document.querySelectorAll('.history-timestamp[data-utc]');
+        timestamps.forEach(timestamp => {
+            const utcString = timestamp.getAttribute('data-utc');
+            if (utcString) {
+                const date = new Date(utcString);
+                const localString = date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                timestamp.textContent = localString;
+            }
+        });
+    }
+    
+    function updateChangeHistoryTimestamps() {
+        // Update all change history timestamps to local time
+        const timestamps = document.querySelectorAll('.change-timestamp[data-utc]');
         timestamps.forEach(timestamp => {
             const utcString = timestamp.getAttribute('data-utc');
             if (utcString) {

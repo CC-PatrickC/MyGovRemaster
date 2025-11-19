@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
-from .models import Request, RequestAttachment, TriageNotesHistory
+from .models import Request, RequestAttachment, TriageNotesHistory, RequestChangeHistory
 from .forms import RequestEditForm, TriageRequestEditForm
 
 def index(request):
@@ -94,8 +94,23 @@ def edit_request(request, request_id):
     FormClass = TriageRequestEditForm if is_triage else RequestEditForm
     
     if request.method == 'POST':
+        # IMPORTANT: Refresh from database to get current state, then store old values
+        # This ensures we capture the actual database state before any form processing
+        request_obj.refresh_from_db()
+        
+        tracked_fields = []
+        old_values = {}
+        if is_triage:
+            tracked_fields = ['title', 'description', 'department', 'stage', 'request_type', 'priority']
+            # Store old values from database BEFORE form processing
+            for field in tracked_fields:
+                if hasattr(request_obj, field):
+                    old_value = getattr(request_obj, field)
+                    old_values[field] = str(old_value).strip() if old_value is not None else ''
+        
         form = FormClass(request.POST, instance=request_obj)
         if form.is_valid():
+            
             # Save triage notes history if triage_notes is provided
             if is_triage:
                 # Get new notes from form
@@ -106,17 +121,67 @@ def edit_request(request, request_id):
                 
                 # Get old notes from database (before saving)
                 old_notes = request_obj.triage_notes or ''
-                old_notes = str(old_notes).strip()
+                if old_notes:
+                    old_notes = str(old_notes).strip()
+                else:
+                    old_notes = ''
                 
-                # Create history entry if new notes are not empty and different from old
+                # Create history entry if new notes are not empty
+                # Only create if different from old to avoid duplicates on unchanged saves
                 if new_notes and new_notes != old_notes:
                     TriageNotesHistory.objects.create(
                         request=request_obj,
                         notes=new_notes,
                         submitted_by=request.user
                     )
+                elif new_notes and new_notes == old_notes:
+                    # Notes are the same - check if there's already a history entry with this exact content
+                    # If not, create one (in case the notes were set directly without history)
+                    existing_history = TriageNotesHistory.objects.filter(
+                        request=request_obj,
+                        notes=new_notes
+                    ).first()
+                    if not existing_history:
+                        TriageNotesHistory.objects.create(
+                            request=request_obj,
+                            notes=new_notes,
+                            submitted_by=request.user
+                        )
             
+            # Save the form
             form.save()
+            
+            # Track field changes after saving
+            if is_triage and tracked_fields:
+                # Get new values from form.cleaned_data (before refresh_from_db overwrites them)
+                # This ensures we're comparing POST data with old database values
+                for field in tracked_fields:
+                    if field in form.cleaned_data:
+                        new_value = form.cleaned_data.get(field, '')
+                        new_value = str(new_value).strip() if new_value is not None else ''
+                        old_value = old_values.get(field, '').strip()
+                        
+                        # Only create history if value changed
+                        if new_value != old_value:
+                            # Get human-readable field name
+                            field_display = field.replace('_', ' ').title()
+                            if hasattr(form.fields[field], 'label') and form.fields[field].label:
+                                field_display = form.fields[field].label
+                            
+                            # Truncate long values for display (keep full value in DB)
+                            old_display = old_value[:200] if old_value else '(empty)'
+                            new_display = new_value[:200] if new_value else '(empty)'
+                            
+                            RequestChangeHistory.objects.create(
+                                request=request_obj,
+                                field_name=field_display,
+                                old_value=old_display,
+                                new_value=new_display,
+                                changed_by=request.user
+                            )
+                
+                # Refresh to get updated data (after creating history)
+                request_obj.refresh_from_db()
             
             # Refresh the request object to get updated data
             request_obj.refresh_from_db()
@@ -126,13 +191,22 @@ def edit_request(request, request_id):
                 from django.template.loader import render_to_string
                 template_name = 'app/partials/triage_request_form.html' if is_triage else 'app/partials/request_form.html'
                 attachments = request_obj.attachments.all()
-                # Get fresh history after save - convert to list to ensure it's evaluated
-                triage_notes_history = list(request_obj.triage_notes_history.all()) if is_triage else []
+                
+                # Get fresh history after save - force a new query
+                if is_triage:
+                    # Force a fresh query by getting the request ID and querying directly
+                    triage_notes_history = TriageNotesHistory.objects.filter(request=request_obj).order_by('-submitted_at')
+                    change_history = RequestChangeHistory.objects.filter(request=request_obj).order_by('-changed_at')
+                else:
+                    triage_notes_history = []
+                    change_history = []
+                
                 form_html = render_to_string(template_name, {
                     'form': FormClass(instance=request_obj), 
                     'request_obj': request_obj, 
                     'attachments': attachments,
-                    'triage_notes_history': triage_notes_history
+                    'triage_notes_history': triage_notes_history,
+                    'change_history': change_history
                 }, request=request)
                 return JsonResponse({'success': True, 'message': 'Request updated successfully.', 'form_html': form_html})
             messages.success(request, 'Request updated successfully.')
@@ -149,21 +223,25 @@ def edit_request(request, request_id):
         template_name = 'app/partials/triage_request_form.html' if is_triage else 'app/partials/request_form.html'
         attachments = request_obj.attachments.all()
         triage_notes_history = request_obj.triage_notes_history.all() if is_triage else []
+        change_history = request_obj.change_history.all() if is_triage else []
         form_html = render_to_string(template_name, {
             'form': form, 
             'request_obj': request_obj, 
-            'attachments': attachments,
-            'triage_notes_history': triage_notes_history
+            'attachments': attachments, 
+            'triage_notes_history': triage_notes_history,
+            'change_history': change_history
         }, request=request)
         return JsonResponse({'form_html': form_html})
     
     attachments = request_obj.attachments.all()
     triage_notes_history = request_obj.triage_notes_history.all() if is_triage else []
+    change_history = request_obj.change_history.all() if is_triage else []
     return render(request, 'app/edit_request.html', {
         'form': form, 
         'request_obj': request_obj, 
         'attachments': attachments,
-        'triage_notes_history': triage_notes_history
+        'triage_notes_history': triage_notes_history,
+        'change_history': change_history
     })
 
 @login_required

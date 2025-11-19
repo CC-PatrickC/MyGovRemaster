@@ -765,53 +765,57 @@ body {
     font-size: 1rem;
     font-weight: 600;
     color: #333;
-    margin-bottom: 0.75rem;
+    margin: 0 0 0.75rem 0;
     display: block;
+    font-family: inherit;
 }
 
 .triage-notes-history {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 0.5rem;
-    background-color: #fafafa;
-    border-radius: 4px;
-    border: 1px solid #e0e0e0;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-family: inherit;
 }
 
 .history-item {
-    background-color: #fff;
-    border: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: #f5f5f5;
     border-radius: 4px;
-    padding: 1rem;
-    transition: box-shadow 0.2s;
+    border: 1px solid #e0e0e0;
+    font-family: inherit;
 }
 
 .history-item:hover {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #eeeeee;
 }
 
 .history-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #e0e0e0;
+    font-family: inherit;
 }
 
 .history-author {
     font-weight: 600;
     color: #333;
     font-size: 0.95rem;
+    font-family: inherit;
 }
 
 .history-timestamp {
     color: #666;
     font-size: 0.875rem;
-    font-family: 'Courier New', monospace;
+    font-family: inherit;
+}
+
+.history-separator {
+    color: #999;
+    font-family: inherit;
 }
 
 .history-content {
@@ -820,15 +824,135 @@ body {
     line-height: 1.6;
     white-space: pre-wrap;
     word-wrap: break-word;
+    margin-top: 0.5rem;
+    font-family: inherit;
 }
 
 .no-history-message {
     color: #999;
     font-size: 0.875rem;
     font-style: italic;
-    padding: 1rem;
+    padding: 0.75rem;
     text-align: center;
+    background-color: #fafafa;
+    border-radius: 4px;
     margin: 0;
+    font-family: inherit;
+}
+
+/* Change History Styles */
+.change-history {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-family: inherit;
+}
+
+.change-item {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    font-family: inherit;
+}
+
+.change-item:hover {
+    background-color: #eeeeee;
+}
+
+.change-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-family: inherit;
+}
+
+.change-author {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.change-field-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    font-family: inherit;
+}
+
+.change-timestamp {
+    color: #666;
+    font-size: 0.875rem;
+    font-family: inherit;
+}
+
+.change-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-family: inherit;
+}
+
+.change-values {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: inherit;
+}
+
+.change-old,
+.change-new {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-family: inherit;
+}
+
+.change-label {
+    font-size: 0.75rem;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: inherit;
+}
+
+.change-value {
+    color: #333;
+    font-size: 0.9rem;
+    word-wrap: break-word;
+    font-family: inherit;
+}
+
+.change-arrow {
+    color: #333;
+    font-size: 1.25rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    font-family: inherit;
+}
+
+/* Responsive change history */
+@media (max-width: 768px) {
+    .change-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .change-details {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .change-arrow {
+        transform: rotate(90deg);
+    }
 }
 
 .attachment-item {

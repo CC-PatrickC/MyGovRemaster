@@ -23,6 +23,15 @@ class TriageRequestEditForm(forms.ModelForm):
             'priority': forms.Select(attrs={'class': 'form-control'}),
             'triage_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
         }
+        labels = {
+            'title': 'Title',
+            'description': 'Description',
+            'department': 'Department',
+            'stage': 'Stage',
+            'request_type': 'Request Type',
+            'priority': 'Priority',
+            'triage_notes': 'Triage Notes',
+        }
 
 class RequestEditForm(forms.ModelForm):
     """Full form for editing requests with all fields."""

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Request, RequestAttachment, TriageNotesHistory
+from .models import Request, RequestAttachment, TriageNotesHistory, RequestChangeHistory
 
 @admin.register(Request)
 class RequestAdmin(admin.ModelAdmin):
@@ -21,3 +21,10 @@ class TriageNotesHistoryAdmin(admin.ModelAdmin):
     list_filter = ['submitted_at']
     search_fields = ['notes', 'request__request_id', 'request__title', 'submitted_by__username']
     readonly_fields = ['submitted_at']
+
+@admin.register(RequestChangeHistory)
+class RequestChangeHistoryAdmin(admin.ModelAdmin):
+    list_display = ['request', 'field_name', 'changed_by', 'changed_at']
+    list_filter = ['field_name', 'changed_at']
+    search_fields = ['field_name', 'old_value', 'new_value', 'request__request_id', 'request__title', 'changed_by__username']
+    readonly_fields = ['changed_at']
