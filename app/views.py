@@ -5,6 +5,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+import json
 from .models import Request, RequestAttachment, TriageNotesHistory, RequestChangeHistory
 from .forms import RequestEditForm, TriageRequestEditForm
 
@@ -12,15 +14,25 @@ def index(request):
     """Home page view."""
     # Check if user is in Triage Group, Triage Group Lead, or is a SuperUser
     can_view_triage = False
+    can_view_governance = False
+    is_end_user = False
     triage_requests = []
     
     if request.user.is_authenticated:
         # SuperUsers can see all sections
         if request.user.is_superuser:
             can_view_triage = True
+            can_view_governance = True
         else:
             user_groups = request.user.groups.values_list('name', flat=True)
             can_view_triage = 'Triage Group' in user_groups or 'Triage Group Lead' in user_groups
+            
+            # End users are authenticated users who are NOT superusers and NOT in triage groups
+            if not can_view_triage:
+                is_end_user = True
+            else:
+                # Users with triage groups can also view governance
+                can_view_governance = True
         
         if can_view_triage:
             # Get requests for Triage Requests section
@@ -29,20 +41,32 @@ def index(request):
             )
     
     # Get requests for Under Review - Governance section
-    governance_requests = Request.objects.filter(
-        stage='Under Review - Governance'
-    )
+    governance_requests = []
+    if can_view_governance:
+        governance_requests = Request.objects.filter(
+            stage='Under Review - Governance'
+        )
     
-    # Get requests for Under Review - Final Governance section
-    final_governance_requests = Request.objects.filter(
-        stage='Under Review - Final Governance'
-    )
+    # Get requests for Under Review - Final Governance section (all authenticated users can see this)
+    final_governance_requests = []
+    if request.user.is_authenticated:
+        final_governance_requests = Request.objects.filter(
+            stage='Under Review - Final Governance'
+        )
+    
+    # Get user's own requests for MyRequests section
+    my_requests = []
+    if request.user.is_authenticated:
+        my_requests = Request.objects.filter(created_by=request.user)
     
     context = {
         'can_view_triage': can_view_triage,
+        'can_view_governance': can_view_governance,
+        'is_end_user': is_end_user,
         'triage_requests': triage_requests,
         'governance_requests': governance_requests,
         'final_governance_requests': final_governance_requests,
+        'my_requests': my_requests,
     }
     return render(request, 'app/index.html', context)
 
@@ -84,6 +108,41 @@ def submit_request(request):
 def requests(request):
     """Requests page view."""
     return render(request, 'app/requests.html')
+
+def view_request(request, request_id):
+    """View request details (read-only) for non-triage requests."""
+    request_obj = get_object_or_404(Request, id=request_id)
+    
+    # Check if this is a governance request
+    is_governance = request_obj.stage == 'Under Review - Governance'
+    
+    # Get attachments, triage notes history, and change history for governance requests
+    attachments = []
+    triage_notes_history = []
+    change_history = []
+    
+    if is_governance:
+        attachments = request_obj.attachments.all()
+        triage_notes_history = request_obj.triage_notes_history.all()
+        change_history = request_obj.change_history.all()
+    
+    context = {
+        'request_obj': request_obj,
+        'attachments': attachments,
+        'triage_notes_history': triage_notes_history,
+        'change_history': change_history,
+    }
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Return appropriate partial template for AJAX
+        if is_governance:
+            template = 'app/partials/governance_request_view.html'
+        else:
+            template = 'app/partials/request_view.html'
+        return render(request, template, context)
+    else:
+        # Return full page (fallback)
+        return render(request, 'app/request_view.html', context)
 
 def edit_request(request, request_id):
     """Edit request view for modal."""
@@ -284,6 +343,51 @@ def upload_attachment(request, request_id):
     })
 
 @login_required
+@require_http_methods(["POST"])
+def archive_request(request, request_id):
+    """Archive a request by changing its stage to 'Archived'."""
+    request_obj = get_object_or_404(Request, id=request_id)
+    
+    # Check if user has permission (Triage Group, Triage Group Lead, or SuperUser)
+    if not request.user.is_superuser:
+        user_groups = request.user.groups.values_list('name', flat=True)
+        if 'Triage Group' not in user_groups and 'Triage Group Lead' not in user_groups:
+            return JsonResponse({'success': False, 'error': 'You do not have permission to archive requests.'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        reason = data.get('reason', '').strip()
+        
+        if not reason:
+            return JsonResponse({'success': False, 'error': 'Reason is required.'}, status=400)
+        
+        # Store old stage for change history
+        old_stage = request_obj.stage
+        
+        # Update stage to Archived
+        request_obj.stage = 'Archived'
+        request_obj.save()
+        
+        # Create change history entry
+        RequestChangeHistory.objects.create(
+            request=request_obj,
+            field_name='stage',
+            old_value=old_stage,
+            new_value='Archived',
+            changed_by=request.user
+        )
+        
+        # Add reason to triage notes if it exists, or create a note
+        if request_obj.triage_notes:
+            request_obj.triage_notes += f"\n\n[Archived by {request.user.get_full_name() or request.user.username}]: {reason}"
+        else:
+            request_obj.triage_notes = f"[Archived by {request.user.get_full_name() or request.user.username}]: {reason}"
+        request_obj.save()
+        
+        return JsonResponse({'success': True, 'message': 'Request archived successfully.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 @require_http_methods(["POST"])
 def delete_attachment(request, attachment_id):
     """Delete an attachment."""

@@ -1,94 +1,58 @@
-<form id="requestEditForm" method="post" action="{% url 'edit_request' request_obj.id %}">
-    {% csrf_token %}
-    
+<div class="request-view">
     <div class="form-row">
-        <div class="form-group">
+        <div class="form-group full-width">
             <h4 class="attachments-section-title">Title</h4>
-            {{ form.title }}
-            {% if form.title.errors %}
-                <div class="error-message">{{ form.title.errors }}</div>
-            {% endif %}
+            <div class="request-view-value">{{ request_obj.title }}</div>
         </div>
     </div>
     
     <div class="form-row">
-        <div class="form-group">
+        <div class="form-group full-width">
             <h4 class="attachments-section-title">Description</h4>
-            {{ form.description }}
-            {% if form.description.errors %}
-                <div class="error-message">{{ form.description.errors }}</div>
-            {% endif %}
+            <div class="request-view-value">{{ request_obj.description|linebreaks }}</div>
         </div>
     </div>
     
     <div class="form-row">
         <div class="form-group">
             <h4 class="attachments-section-title">Department</h4>
-            {{ form.department }}
-            {% if form.department.errors %}
-                <div class="error-message">{{ form.department.errors }}</div>
-            {% endif %}
+            <div class="request-view-value">{{ request_obj.department|default:"(empty)" }}</div>
         </div>
     </div>
     
     <div class="form-row">
         <div class="form-group">
             <h4 class="attachments-section-title">Stage</h4>
-            {{ form.stage }}
-            {% if form.stage.errors %}
-                <div class="error-message">{{ form.stage.errors }}</div>
-            {% endif %}
+            <div class="request-view-value">{{ request_obj.get_stage_display|default:request_obj.stage }}</div>
         </div>
         
         <div class="form-group">
             <h4 class="attachments-section-title">Request Type</h4>
-            {{ form.request_type }}
-            {% if form.request_type.errors %}
-                <div class="error-message">{{ form.request_type.errors }}</div>
-            {% endif %}
+            <div class="request-view-value">{{ request_obj.get_request_type_display|default:request_obj.request_type }}</div>
         </div>
         
         <div class="form-group">
             <h4 class="attachments-section-title">Priority</h4>
-            {{ form.priority }}
-            {% if form.priority.errors %}
-                <div class="error-message">{{ form.priority.errors }}</div>
-            {% endif %}
+            <div class="request-view-value">{{ request_obj.get_priority_display|default:request_obj.priority }}</div>
         </div>
     </div>
     
     <div class="form-row">
         <div class="form-group full-width">
-            <h4 class="attachments-section-title">Attachments</h4>
-            <div class="file-upload-area" id="fileUploadArea" data-request-id="{{ request_obj.id }}">
-                <input type="file" id="fileInput" multiple style="display: none;" />
-                <div class="file-upload-content">
-                    <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <p class="upload-text">Drag and drop files here or <span class="upload-link">click to browse</span></p>
-                    <p class="upload-hint">You can upload up to 5 files. Maximum file size: 10MB each</p>
-                </div>
-            </div>
-            <div class="attachments-section">
-                <h4 class="attachments-section-title">Current Attachments</h4>
-                <div class="attachments-list" id="attachmentsList">
-                    {% if attachments %}
-                        {% for attachment in attachments %}
-                            <div class="attachment-item" data-attachment-id="{{ attachment.id }}">
-                                <span class="attachment-name">{{ attachment.original_filename }}</span>
-                                <div class="attachment-actions">
-                                    <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">View</a>
-                                    <button type="button" class="attachment-delete" onclick="deleteAttachment({{ attachment.id }})">Delete</button>
-                                </div>
+            <h4 class="attachments-section-title">Current Attachments</h4>
+            <div class="attachments-list">
+                {% if attachments %}
+                    {% for attachment in attachments %}
+                        <div class="attachment-item">
+                            <span class="attachment-name">{{ attachment.original_filename }}</span>
+                            <div class="attachment-actions">
+                                <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">View</a>
                             </div>
-                        {% endfor %}
-                    {% else %}
-                        <p class="no-attachments-message">No attachments uploaded yet.</p>
-                    {% endif %}
-                </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-attachments-message">No attachments uploaded yet.</p>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -96,10 +60,7 @@
     <div class="form-row">
         <div class="form-group full-width">
             <h4 class="attachments-section-title">Triage Notes</h4>
-            {{ form.triage_notes }}
-            {% if form.triage_notes.errors %}
-                <div class="error-message">{{ form.triage_notes.errors }}</div>
-            {% endif %}
+            <div class="request-view-value">{{ request_obj.triage_notes|linebreaks|default:"(empty)" }}</div>
         </div>
     </div>
     
@@ -157,13 +118,5 @@
             </div>
         </div>
     </div>
-    
-    <div class="form-actions">
-        <button type="button" class="btn-delete" onclick="showDeleteConfirmation({{ request_obj.id }})">Delete</button>
-        <div class="form-actions-right">
-            <button type="submit" class="btn-primary">Save Changes</button>
-            <button type="button" class="btn-secondary" onclick="closeRequestModal()">Cancel</button>
-        </div>
-    </div>
-</form>
+</div>
 

@@ -9,6 +9,7 @@ class Request(models.Model):
         ('Under Review - Final Governance', 'Under Review - Final Governance'),
         ('Approved', 'Recommended'),
         ('Rejected', 'Not Recommended'),
+        ('Archived', 'Archived'),
     ]
     
     REQUEST_TYPE_CHOICES = [

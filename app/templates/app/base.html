@@ -23,7 +23,25 @@
             </div>
             <div class="user-section">
                 {% block user_info %}
-                <span class="user-name-group"><strong class="user-name">Patrick Condon</strong> | SuperUser</span>
+                <span class="user-name-group">
+                    {% if user.is_authenticated %}
+                        <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
+                        {% if user.is_superuser or user.groups.exists %}
+                            <span class="user-separator"> | </span>
+                            <span class="user-groups">
+                                {% if user.is_superuser %}
+                                    SuperUser
+                                {% else %}
+                                    {% for group in user.groups.all %}
+                                        {{ group.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        Guest
+                    {% endif %}
+                </span>
                 <div class="user-dropdown">
                     <button class="user-icon-button" type="button" onclick="toggleUserDropdown()">
                         <svg class="user-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
